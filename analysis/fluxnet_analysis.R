@@ -28,17 +28,17 @@ scaling_factor <- 1.5
 set.seed(42)
 
 # model forcing data
-driver <- read_rds("/data_2/FluxDataKit/v3.4/zenodo_upload/rsofun_driver_data_v3.4.2.rds") # currently only on workstation
+driver <- read_rds("/data/fluxnet/rsofun_driver_data_v3.4.2.rds") # currently only on workstation
 
 # site meta info
-fdk_site_info <- read_csv("/data_2/FluxDataKit/v3.4/zenodo_upload/fdk_site_info.csv")
+fdk_site_info <- read_csv("//data/fluxnet/zenodo_upload/fdk_site_info.csv")
 
 fdk_site_info$koeppen_code <-  ifelse(fdk_site_info$koeppen_code == "BSh","Bsh",fdk_site_info$koeppen_code)
 fdk_site_info$koeppen_code <-  ifelse(fdk_site_info$koeppen_code == "BWh","Bwh",fdk_site_info$koeppen_code)
 fdk_site_info$koeppen_code <-  ifelse(fdk_site_info$koeppen_code == "BSk","Bsk",fdk_site_info$koeppen_code)
 
 # data quality filter info
-fdk_filter <-  read_csv("/data_2/FluxDataKit/v3.4/zenodo_upload/fdk_site_fullyearsequence.csv")
+fdk_filter <-  read_csv("/data/fluxnet/fdk_site_fullyearsequence.csv")
 
 # exclude croplands and wetlands from calibration/evaluation
 fdk_site_info <- fdk_site_info[fdk_site_info$igbp_land_use != "CRO" &
@@ -134,7 +134,7 @@ driver <- driver_forcing |>
 
 
 # good-quality sites from analysis of Stocker et al. (2018) New Phyt.
-df_flue <- readr::read_csv("/data/flue_stocker18nphyt.csv")
+df_flue <- readr::read_csv("/data/fluxnet/flue_stocker18nphyt.csv")
 
 df_flue <- df_flue[df_flue$site %in% fdk_filter$sitename,]
 
@@ -274,7 +274,7 @@ so_fun_analysis <- function(out_dir, prefix){
       rename(
         site = sitename
       ),
-    df_flue = readr::read_csv("/data/flue_stocker18nphyt.csv"),
+    df_flue = readr::read_csv("/data/fluxnet/flue_stocker18nphyt.csv"),
     before = 20,
     after = 105,
     leng_threshold = 10,
@@ -482,7 +482,7 @@ so_fun_analysis <- function(out_dir, prefix){
       rename(
         site = sitename
       ),
-    df_flue = readr::read_csv("/data/flue_stocker18nphyt.csv"),
+    df_flue = readr::read_csv("/data/fluxnet/flue_stocker18nphyt.csv"),
     before = 20,
     after = 105,
     leng_threshold = 10,
@@ -563,7 +563,7 @@ so_fun_analysis <- function(out_dir, prefix){
 
 # Model run
 
-par_calib <-  read_rds("/data/global_calib_PM_S0.rds")
+par_calib <-  read_rds("/data/fluxnet/global_calib_PM_S0.rds")
 
 
 params_modl <- list(
@@ -625,7 +625,7 @@ ggsave(plot = clim_aet, paste0("/figure/","PM_S0_climates_aet_all.pdf"), device 
 # PM old WHC
 ##------
 
-nc_file <- nc_open("/data/whc_2m.nc")
+nc_file <- nc_open("/data/fluxnet/whc_2m.nc")
 
 whc = ncvar_get(nc_file, "whc_2m")
 lons = ncvar_get(nc_file, "lon")
@@ -652,7 +652,7 @@ for(i in 1:dim(driver)[1]){
 
 
 
-par_calib <-  read_rds("/data/global_calib_PM.rds")
+par_calib <-  read_rds("/data/fluxnet/global_calib_PM.rds")
 
 
 params_modl <- list(
@@ -715,7 +715,7 @@ ggsave(plot = clim_aet, paste0("/figure/","PM_climates_aet_all.pdf"), device = "
 # PT
 ##------
 
-par_calib <-  read_rds("/data/global_calib_PT.rds")
+par_calib <-  read_rds("/data/fluxnet/global_calib_PT.rds")
 
 
 params_modl <- list(
