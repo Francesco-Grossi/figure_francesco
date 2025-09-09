@@ -134,7 +134,7 @@ driver <- driver_forcing |>
 
 
 # good-quality sites from analysis of Stocker et al. (2018) New Phyt.
-df_flue <- readr::read_csv("~/data_scratch/SoFunCalVal_definitivo/data/flue_stocker18nphyt.csv")
+df_flue <- readr::read_csv("/data/flue_stocker18nphyt.csv")
 
 df_flue <- df_flue[df_flue$site %in% fdk_filter$sitename,]
 
@@ -274,7 +274,7 @@ so_fun_analysis <- function(out_dir, prefix){
       rename(
         site = sitename
       ),
-    df_flue = readr::read_csv("~/data_scratch/SoFunCalVal_definitivo/data/flue_stocker18nphyt.csv"),
+    df_flue = readr::read_csv("/data/flue_stocker18nphyt.csv"),
     before = 20,
     after = 105,
     leng_threshold = 10,
@@ -482,7 +482,7 @@ so_fun_analysis <- function(out_dir, prefix){
       rename(
         site = sitename
       ),
-    df_flue = readr::read_csv("~/data_scratch/SoFunCalVal_definitivo/data/flue_stocker18nphyt.csv"),
+    df_flue = readr::read_csv("/data/flue_stocker18nphyt.csv"),
     before = 20,
     after = 105,
     leng_threshold = 10,
@@ -563,7 +563,7 @@ so_fun_analysis <- function(out_dir, prefix){
 
 # Model run
 
-par_calib <-  read_rds("/data/global_calib_PMS0.rds")
+par_calib <-  read_rds("/data/global_calib_PM_S0.rds")
 
 
 params_modl <- list(
@@ -652,7 +652,7 @@ for(i in 1:dim(driver)[1]){
 
 
 
-par_calib <-  read_rds("/data/global_calib_PM_old_WHC.rds")
+par_calib <-  read_rds("/data/global_calib_PM.rds")
 
 
 params_modl <- list(
@@ -715,7 +715,7 @@ ggsave(plot = clim_aet, paste0("/figure/","PM_climates_aet_all.pdf"), device = "
 # PT
 ##------
 
-par_calib <-  read_rds("~/data_scratch/my_stuff/global_calib_PT.rds")
+par_calib <-  read_rds("/data/global_calib_PT.rds")
 
 
 params_modl <- list(

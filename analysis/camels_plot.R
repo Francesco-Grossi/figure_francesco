@@ -9,17 +9,17 @@ library(raster)
 library(sf)
 library(cowplot)
 
-vector_path <- "~/data_scratch/big_data/Caravan-csv/Caravan/shapefiles/camels/camels_basin_shapes.shp"
+vector_path <- "/data/camels/camels_basin_shapes.shp"
 
 shapefile <- terra::vect(vector_path)
 
-attributes_hydroatlas_camels <- read_csv("~/data_scratch/big_data/Caravan-csv/Caravan/attributes/camels/attributes_hydroatlas_camels.csv")
+attributes_hydroatlas_camels <- read_csv("/data/camels/attributes_hydroatlas_camels.csv")
 
-siteinfo <- read.csv("~/data_scratch/big_data/Caravan-csv/Caravan/attributes/camels/attributes_other_camels.csv")
+siteinfo <- read.csv("/data/camels/attributes_other_camels.csv")
 
 siteinfo <- siteinfo[siteinfo$gauge_id %in% shapefile$gauge_id,]
 
-filter_out <- readLines("../my_stuff/camels_to_discard.txt")
+filter_out <- readLines("/data/camels/camels_to_discard.txt")
 
 # we add the year of interest, for example 2004
 
@@ -35,20 +35,20 @@ siteinfo <- siteinfo |>
          lat = gauge_lat)
 
 attributes_hydroatlas_camels <- attributes_hydroatlas_camels |>
-  rename(sitename = gauge_id) 
+  rename(sitename = gauge_id)
   #filter(hft_ix_s09 < 50 & hft_ix_s93 < 50 )
 
 siteinfo2 <- siteinfo[siteinfo$sitename %in% attributes_hydroatlas_camels$sitename,]
 
 siteinfo2 <- siteinfo2[!(siteinfo2$sitename %in% filter_out),]
 
-driver_data <- readRDS("../my_stuff/driver_data_camels.rds")
+driver_data <- readRDS("/data/camels/driver_data_camels.rds")
 
-meta_info  <- read_csv("../my_stuff/camels_site_info.csv")
+meta_info  <- read_csv("/data/camels/camels_site_info.csv")
 
-land_use <- read_csv("~/data_scratch/long_land_use_camels_2005.csv")
-
-climates <- read_csv("~/data_scratch/long_koeppen_camels.csv")
+# land_use <- read_csv("~/data_scratch/long_land_use_camels_2005.csv")
+#
+# climates <- read_csv("~/data_scratch/long_koeppen_camels.csv")
 
 
 driver_data <- driver_data[(driver_data$sitename %in% siteinfo2$sitename),]
@@ -60,18 +60,15 @@ land_use <- land_use[(land_use$sitename %in% siteinfo2$sitename),]
 
 climates <- climates[(climates$sitename %in% siteinfo2$sitename),]
 
-best_par <- readRDS("~/data_scratch/my_stuff/global_calib_shorter.rds")
-
-#best_par <- readRDS("~/data_scratch/rsofun/global_calib_diffusion.rds")
-
+best_par <- readRDS("data/global_calib_PM_S0.rds")
 
 params_modl <- list(
-  kphio              =  best_par$par[["kphio"]],   
-  kphio_par_a        =  best_par$par[["kphio_par_a"]],       
-  kphio_par_b        =  best_par$par[["kphio_par_b"]],       
-  rd_to_vcmax        =  0.014,  
-  soilm_thetastar    =  best_par$par[["soilm_thetastar"]],       
-  beta_unitcostratio =  best_par$par[["beta_unitcostratio"]],        
+  kphio              =  best_par$par[["kphio"]],
+  kphio_par_a        =  best_par$par[["kphio_par_a"]],
+  kphio_par_b        =  best_par$par[["kphio_par_b"]],
+  rd_to_vcmax        =  0.014,
+  soilm_thetastar    =  best_par$par[["soilm_thetastar"]],
+  beta_unitcostratio =  best_par$par[["beta_unitcostratio"]],
   tau_acclim         =  30,
   kc_jmax            =  0.41,
   gw_calib           = best_par$par[["gw_calib"]]
@@ -96,9 +93,6 @@ driver_data <- driver_data[driver_data$sitename %in% filter$sitename,]
 ####----------
 
 # map
-
-vector_path <- "~/data_scratch/shapefiles/camels/camels_basin_shapes.shp"
-
 #shapefile <- terra::vect(vector_path)
 
 shapefile <- sf::st_read(vector_path)
@@ -117,8 +111,6 @@ map_plot <-
 
 
 shapefile <- shapefile[shapefile$gauge_id %in% map_plot$sitename,]
-
-
 
 
 shapefile$climate <- multi_year$delta
@@ -160,7 +152,7 @@ ggplot(data = shapefile) +
   geom_sf(data = shapefile, aes(fill = climate), color = "black") +
   scale_color_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
   theme_minimal() +
-  labs(x = "Longitude", y = "Latitude") 
+  labs(x = "Longitude", y = "Latitude")
 
 
 
@@ -179,7 +171,7 @@ ggplot() +
   labs(title = "canopy height", x = "Longitude", y = "Latitude")
 
 ggplot(map_plot, aes(x = canopy_height, y = delta)) +
-  geom_point() 
+  geom_point()
 
 
 ####----------
@@ -191,20 +183,20 @@ ggplot(map_plot, aes(x = canopy_height, y = delta)) +
 
 create_df_testing <- function(diffence_reference){
   # driver_data <- readRDS("driver_data_camels.rds")
-  # 
-  # 
-  
-  
+  #
+  #
+
+
   dir <- "~/data_scratch/elevation_lang_005.tif"
-  
+
   df_out <- ingestr:::extract_pointdata_allsites_shp(
     filename = "~/data_scratch/elevation_lang_005.tif",
     df_shapefile = shapefile[shapefile$gauge_id %in% siteinfo$gauge_id,],
     get_time = F,
     year_arg = NA_integer_, month_arg = NA_integer_ # only used for WFDEI in combination with get_time
-  ) 
-  
-  driver_data <- 
+  )
+
+  driver_data <-
     left_join(driver_data |>
                 unnest(site_info) |>
                 dplyr::select(- canopy_height, -reference_height),
@@ -215,8 +207,8 @@ create_df_testing <- function(diffence_reference){
                 dplyr::select(-ID),
               by ="sitename")|>
     nest(site_info = c(lat,lon,elv,whc,canopy_height,reference_height))
-  
-  
+
+
   # driver_data <- driver_data |> unnest(params_siml) |>
   #   mutate(use_gs = TRUE,
   #          use_phydro = FALSE,
@@ -224,16 +216,16 @@ create_df_testing <- function(diffence_reference){
   #   group_by(sitename) |>
   #   nest(params_siml = c(spinup, spinupyears, recycle, outdt, ltre,  ltne,  ltrd,  ltnd,  lgr3,  lgn3,  lgr4 ,
   #                        use_gs, use_phydro, use_pml))
-  
-  
-  
+
+
+
   # run the model for these parameters
   output <- rsofun::runread_pmodel_f(
     driver_data,
     par = params_modl
   )
-  
-  
+
+
   mod <- left_join(output |>
                      unnest(data) |>
                      dplyr::select(sitename,date,cond,aet,pet),
@@ -242,38 +234,38 @@ create_df_testing <- function(diffence_reference){
                      dplyr::select(sitename,date,rain) |>
                      mutate(rain = rain * 86400),
                    by = c("sitename","date")
-  ) |> 
+  ) |>
     mutate(prec = rain + cond) |>
     group_by(sitename, year(date)) |>
     summarise(aet = sum(aet, na.rm = T),
               prec = sum(prec,na.rm = T),
               pet = sum(pet, na.rm = T))
-  
-  
+
+
   obs <- driver_data |>
     unnest(forcing) |>
     mutate(rain = rain * 86400) |>
     group_by(sitename, year(date)) |>
     summarise(
-      
+
       runoff = sum(runoff, na.rm = T),
-      
+
               rain = sum(rain,na.rm = T))
-  
+
   obs2 <- driver_data |>
     unnest(site_info) |>
     group_by(sitename) |>
     dplyr::select(sitename,canopy_height,reference_height,lat,lon)
-  
+
   # change runoff
   obs3 <- left_join(obs,
             attributes_hydroatlas_camels |>
               dplyr::select(sitename,run_mm_syr),
             by = "sitename")
-  # 
+  #
   # multi_year <- left_join(
-  #   mod, obs, by = c("sitename","year(date)")) 
-  
+  #   mod, obs, by = c("sitename","year(date)"))
+
   multi_year <- left_join(
     mod, obs3, by = c("sitename","year(date)")) |>
     rename(mod_aet = aet) |>
@@ -298,24 +290,24 @@ create_df_testing <- function(diffence_reference){
     dplyr::select(sitename, mod_aet, obs_aet,obs_aet_hydro,delta,delta_hydro,error,error_hydro,rain,runoff,runoff_hydro,pet)
 
   multi_year <- left_join(multi_year,obs2,by="sitename")
-  
+
   return(multi_year)
 }
 
 # testing the best absolute delta (is -1)
 
 # reference_set <- seq(-1.2,-1,0.02)
-# 
+#
 # delta_res <- NULL
-# 
+#
 # for(i in reference_set){
 #   multi_year <- create_df_testing(i)
-#   
+#
 #   message(i)
 #   delta_res <- append(delta_res,sum(abs(multi_year$error)))
-#   
+#
 # }
-# 
+#
 # plot(reference_set,delta_res)
 
 multi_year <- create_df_testing(0)
@@ -330,17 +322,17 @@ shapefile$climate <- multi_year$delta
 
 
 multi_year <- left_join(multi_year,
-                        siteinfo |> 
+                        siteinfo |>
                           dplyr::select(sitename,area),
                         by = "sitename")
 
 multi_year2 <- left_join(multi_year,
-                        attributes_hydroatlas_camels |> 
+                        attributes_hydroatlas_camels |>
                           dplyr::select(sitename,run_mm_syr),
                         by = "sitename") |>
   mutate(obs_aet = rain - run_mm_syr)
 
-ggplot(multi_year , aes(x = runoff_hydro, y = error)) + geom_point() 
+ggplot(multi_year , aes(x = runoff_hydro, y = error)) + geom_point()
 
 
 us_map <- map_data("state")
@@ -376,13 +368,13 @@ ggplot() +
   labs(title = expression( paste("RMSE aet (mm yr "^-1,") " )), x = "Longitude", y = "Latitude")
 
 # max_land_use <- left_join(
-#   land_use |> 
+#   land_use |>
 #     group_by(sitename) |>
 #     summarise(percentage = max(percentage)),
 #   land_use, by = c("sitename","percentage")
 # ) |>
 #   rename(max_percentage = percentage)
-# 
+#
 max_cliamte <- left_join(
   climates |>
     group_by(sitename) |>
@@ -392,50 +384,50 @@ max_cliamte <- left_join(
   rename(max_fraction = fraction)
 #max_cliamte <- left_join(max_cliamte ,multi_year)
 
-ggplot(max_cliamte , aes(x = run_mm_syr, y = error, color = koeppen_code)) + geom_point() 
+ggplot(max_cliamte , aes(x = run_mm_syr, y = error, color = koeppen_code)) + geom_point()
 
 
-# 
-# 
+#
+#
 # max_land_use$is_dominant <- ifelse(max_land_use$max_percentage > 66,T,F)
-# 
+#
 # land_use_plot <- left_join(
 #   max_land_use,
 #   multi_year |> dplyr::select(sitename,delta,error),
 #   by = "sitename")
-# 
-# ggplot(land_use_plot,aes(x = land_use, y = delta)) + 
-#   geom_boxplot() + 
+#
+# ggplot(land_use_plot,aes(x = land_use, y = delta)) +
+#   geom_boxplot() +
 #   geom_jitter(aes(colour = is_dominant)) +
 #   ylab("delta (mm)") +
 #   coord_flip()
-# 
-# ggplot(land_use_plot,aes(x = land_use, y = error)) + 
-#   geom_boxplot() + 
+#
+# ggplot(land_use_plot,aes(x = land_use, y = error)) +
+#   geom_boxplot() +
 #   geom_jitter(aes(colour = is_dominant)) +
 #   ylab("error (mm)") +
 #   coord_flip()
-# 
+#
 # max_cliamte$is_dominant <- ifelse(max_cliamte$max_fraction > 66,T,F)
-# 
+#
 # climate_plot <- left_join(
 #   max_cliamte,
 #   multi_year |> dplyr::select(sitename,delta,error),
 #   by = "sitename")
-# 
-# ggplot(climate_plot,aes(x = koeppen_code, y = delta)) + 
-#   geom_boxplot(outlier.shape = NA) + 
+#
+# ggplot(climate_plot,aes(x = koeppen_code, y = delta)) +
+#   geom_boxplot(outlier.shape = NA) +
 #   geom_jitter() +
-#   ylab(expression( paste("delta aet (mm yr "^-1,") " ))) 
-# 
-# ggplot(climate_plot,aes(x = koeppen_code, y = error)) + 
-#   geom_boxplot() + 
+#   ylab(expression( paste("delta aet (mm yr "^-1,") " )))
+#
+# ggplot(climate_plot,aes(x = koeppen_code, y = error)) +
+#   geom_boxplot() +
 #   geom_jitter(aes(colour = is_dominant)) +
-#   ylab("error (mm)") 
-# 
+#   ylab("error (mm)")
+#
 
 
-df_budyko <- rbind(multi_year |> dplyr::select(sitename,rain,pet,mod_aet) 
+df_budyko <- rbind(multi_year |> dplyr::select(sitename,rain,pet,mod_aet)
                    |>rename(aet = mod_aet) |> mutate(out = "mod"),
                    multi_year |> dplyr::select(sitename,rain,pet,obs_aet) |>
                      rename(aet = obs_aet)|> mutate(out = "obs"),
@@ -452,7 +444,7 @@ multi_year <- left_join(multi_year,max_cliamte, by = "sitename")
 
 budyko_climate <- left_join(max_cliamte, multi_year, by = "sitename")
 
-budyko_climate2 <- budyko_climate |> 
+budyko_climate2 <- budyko_climate |>
   group_by(koeppen_code) |>
   summarise(obs_aet = median(obs_aet,na.rm = T),
             hydro_aet = median(obs_aet_hydro,na.rm=T),
@@ -472,7 +464,7 @@ budyko_climate3 <- rbind(budyko_climate2 |> dplyr::select( koeppen_code, obs_aet
 
 ggplot() +
   geom_abline(slope = 1, intercept = 0, , linetype = "dotted") +
-  geom_hline(yintercept = 1, , linetype = "dotted") + 
+  geom_hline(yintercept = 1, , linetype = "dotted") +
   geom_point(data = df_budyko, aes(x = pet / rain, y = aet / rain, shape = out, colour = koeppen_code), alpha = 0.25) +
   geom_point(data = budyko_climate3 , aes(x = pet / rain, y = aet / rain, shape = out, colour = koeppen_code), size = 3)
 
@@ -484,21 +476,21 @@ ggplot() +
 
 plot_2 <- ggplot() +
   geom_abline(slope = 1, intercept = 0, , linetype = "dotted") +
-  geom_hline(yintercept = 1, , linetype = "dotted") + 
+  geom_hline(yintercept = 1, , linetype = "dotted") +
   geom_point(data = df_budyko |> filter(out == "obs"), aes(x = pet / rain, y = aet / rain, colour = koeppen_code), alpha = 0.25) +
   geom_point(data = budyko_climate3 |> filter(out == "obs"), aes(x = pet / rain, y = aet / rain, colour = koeppen_code), size = 2) +
   theme(legend.position = "none") + ylim(0,1.07) + xlim(0,10)
 
 plot_1 <- ggplot() +
   geom_abline(slope = 1, intercept = 0, , linetype = "dotted") +
-  geom_hline(yintercept = 1, , linetype = "dotted") + 
+  geom_hline(yintercept = 1, , linetype = "dotted") +
   geom_point(data = df_budyko |> filter(out == "mod"), aes(x = pet / rain, y = aet / rain, colour = koeppen_code), alpha = 0.25) +
   geom_point(data = budyko_climate3 |> filter(out == "mod"), aes(x = pet / rain, y = aet / rain, colour = koeppen_code), size = 2) +
   theme(legend.position = "none") + ylab(NULL) + ylim(0,1.07)  + xlim(0,10)
 
 plot_3 <- ggplot() +
   geom_abline(slope = 1, intercept = 0, , linetype = "dotted") +
-  geom_hline(yintercept = 1, , linetype = "dotted") + 
+  geom_hline(yintercept = 1, , linetype = "dotted") +
   geom_point(data = df_budyko |> filter(out == "hydro"), aes(x = pet / rain, y = aet / rain, colour = koeppen_code), alpha = 0.25) +
   geom_point(data = budyko_climate3 |> filter(out == "hydro"), aes(x = pet / rain, y = aet / rain, colour = koeppen_code), size = 2) +
   theme(legend.position = "none") + ylab(NULL) + ylim(0,1.07)  + xlim(0,10)
@@ -506,7 +498,7 @@ plot_3 <- ggplot() +
 
 ggplot() +
   geom_abline(slope = 1, intercept = 0, , linetype = "dotted") +
-  geom_hline(yintercept = 1, , linetype = "dotted") + 
+  geom_hline(yintercept = 1, , linetype = "dotted") +
   geom_point(data = budyko_climate3 , aes(x = pet / rain, y = aet / rain, shape = out, colour = koeppen_code))+
   ylab(NULL) + ylim(0,1.07)  + xlim(0,10)
 
@@ -522,7 +514,7 @@ plot_1 <- ggplot() +
   geom_point(data = budyko_climate2 , aes(x = obs_aet / rain, y = mod_aet / rain,  colour = koeppen_code), size = 2) +
   geom_point(data = multi_year[multi_year$koeppen_code %in% budyko_climate2$koeppen_code,], aes(x = obs_aet  / rain, y = mod_aet / rain, colour = koeppen_code), alpha = 0.25) +
   ylim(0,1.07)  + xlim(0,1.07)
-  
+
 plot_2 <- ggplot() +
   geom_abline(slope = 1, intercept = 0, , linetype = "dotted") +
   geom_point(data = budyko_climate2 , aes(x = hydro_aet  / rain, y = mod_aet / rain,  colour = koeppen_code), size = 2) +
@@ -539,7 +531,7 @@ plot_budyko <- plot_grid(plot_1,plot_2,plot_3, align = "h", ncol = 3, labels = l
 
 ggsave(plot = plot_budyko, filename = "../scatter_merged.pdf", device = "pdf", dpi = 300, width = 21, height = 7)
 
-# runoff <- budyko_climate |> 
+# runoff <- budyko_climate |>
 #   group_by(koeppen_code) |>
 #   summarise(obs_runoff = median(runoff,na.rm = T),
 #             hydroAtlas_runoff = median(runoff_hydro,na.rm = T),
@@ -558,12 +550,12 @@ df_budyko2 <- rbind(df_budyko|> dplyr::select(-sitename),budyko_climate )
 #                   obs = rgb(0.997061, 0.949794, 0.951206))
 
 
-budyko_plot <- ggplot(df_budyko, aes(x= pet/rain, y= aet/rain, shape= out)) + 
+budyko_plot <- ggplot(df_budyko, aes(x= pet/rain, y= aet/rain, shape= out)) +
   geom_point() +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
-  geom_hline(yintercept = 1, linetype = "dotted") + 
+  geom_hline(yintercept = 1, linetype = "dotted") +
   scale_fill_manual(values=group.colors) +
-  labs(y = "aet / precipitation", x = "pet / precipitation") 
+  labs(y = "aet / precipitation", x = "pet / precipitation")
 
 ggsave(plot = budyko_plot, paste0("../my_stuff/","busyko_camels.png"),dpi = 300, width = 10, height = 7)
 
@@ -571,20 +563,20 @@ ggsave(plot = budyko_plot, paste0("../my_stuff/","busyko_camels.png"),dpi = 300,
 meanc_limate <- rbind(budyko_climate |> mutate(out = "obs"),
                       budyko_climate2 |> mutate(out = "mod"))
 
-ggplot() + 
+ggplot() +
   geom_point(data =df_budyko |> filter(out == "obs"), aes(x= pet/rain, y= aet/rain, alpha = 0.5)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
-  geom_hline(yintercept = 1, linetype = "dotted") + 
+  geom_hline(yintercept = 1, linetype = "dotted") +
   labs(y = "aet / precipitation", x = "pet / precipitation") +
-  geom_point(data =  budyko_climate |> 
-               mutate(koeppen_code = paste0(koeppen_code, ", n = ",n)), 
+  geom_point(data =  budyko_climate |>
+               mutate(koeppen_code = paste0(koeppen_code, ", n = ",n)),
              aes(x= pet/rain, y= aet/rain, color= koeppen_code))
 
 
-ggplot(meanc_limate, aes(x= pet/rain, y= aet/rain, shape = out, color = koeppen_code)) + 
+ggplot(meanc_limate, aes(x= pet/rain, y= aet/rain, shape = out, color = koeppen_code)) +
   geom_point() +
   geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
-  geom_hline(yintercept = 1, linetype = "dotted") + 
+  geom_hline(yintercept = 1, linetype = "dotted") +
   labs(y = "aet / precipitation", x = "pet / precipitation")
 
 
@@ -592,16 +584,16 @@ ggplot(meanc_limate, aes(x= pet/rain, y= aet/rain, shape = out, color = koeppen_
 #   land_use,
 #   multi_year |> dplyr::select(sitename,delta,error),
 #   by = "sitename")
-# 
-# 
+#
+#
 # climate_plot <- left_join(
 #   climates,
 #   multi_year |> dplyr::select(sitename,delta,error),
 #   by = "sitename")
-# 
-# 
+#
+#
 # land <- unique(max_land_use$land_use)
-# 
+#
 # clim <- unique(max_cliamte$koeppen_code)
 
 
@@ -617,7 +609,7 @@ ggsave(plot = canopy_error,"../camels_error_by_canopy.png", width = 1545, height
 
 aera_error <- ggplot(multi_year, aes(x = area, y = error)) + geom_point(size = 0.75) +
   scale_x_log10() +
-  labs(y = expression( paste("RMSE ET (mm yr "^-1,") " )), 
+  labs(y = expression( paste("RMSE ET (mm yr "^-1,") " )),
        x = expression( paste("Area (km "^2,") " )))
 
 print(aera_error)
@@ -626,18 +618,18 @@ print(aera_error)
 #ggsave(plot = aera_error,"../camels_error_by_area.png", width = 1545, height = 1093, scale = 1, units = "px")
 
 
-# recalibrate 
+# recalibrate
 
 ref_seq <- seq(-1,1,0.1)
 
 err_seq <- NULL
 
 for(i in ref_seq){
-  
+
   tmp <- create_df_testing(i)
-  
+
   err_seq <- append(err_seq,sum(tmp$error, na.rm =T))
-  
+
 }
 
 
@@ -650,7 +642,7 @@ multi_year <- create_df_testing(0)
 
 
 ggplot(multi_year, aes(x = canopy_height, y = delta)) +
-  geom_point() 
+  geom_point()
 
 
 ggplot(multi_year, aes(x = pet / rain, y = mod_aet/rain)) + geom_point() +
@@ -668,7 +660,7 @@ multi_year <- left_join(multi_year,
 ggplot(multi_year, aes(x = koeppen_code, y = delta)) + geom_boxplot() + geom_jitter() +
   ylab("delta (mm)")
 
-ggplot(multi_year, aes(x = koeppen_code, y = topographic_index)) + geom_boxplot() + geom_jitter() 
+ggplot(multi_year, aes(x = koeppen_code, y = topographic_index)) + geom_boxplot() + geom_jitter()
 
 
 ggplot(multi_year, aes(x = rain / runoff, y = delta, color = koeppen_code)) +
@@ -679,8 +671,8 @@ multi_year$Dfc <- ifelse(multi_year$koeppen_code == "Dfc",T,F)
 
 
 ggplot(multi_year , aes(x = topographic_index, y = delta, color= Dfc)) +
-  geom_point() 
- 
+  geom_point()
+
 
 print(paste0("multi year mean error (mm): ",sum(abs(multi_year$error)) / 594))
 
@@ -692,18 +684,18 @@ ggplot(df_budyko, aes(x= pet/rain, y= aet/rain, color= out)) + geom_point() +
 
 ggplot(multi_year,aes(x = error)) + geom_histogram(bins = 50, fill = "white", colour = "black") +
   xlab("year mean error (mm)")
- 
+
 
 ggplot(multi_year,aes(x = delta)) + geom_histogram(bins = 50, fill = "white", colour = "black") +
   xlab("year mean delta (mm)")
 
 
-ggplot(multi_year,aes(x = (mod_aet / rain) - (obs_aet / rain))) + geom_histogram(bins = 50, fill = "white", colour = "black") 
+ggplot(multi_year,aes(x = (mod_aet / rain) - (obs_aet / rain))) + geom_histogram(bins = 50, fill = "white", colour = "black")
 
 
 climate <- left_join(max_cliamte, multi_year, by = "sitename")
 
-ggplot(climate[!(climate$koeppen_code %in% c("Dfb","Dfa","Cfa","Dfc","Dsc")),],aes(x = (mod_aet / rain) - (obs_aet / rain))) + geom_histogram(bins = 30, fill = "white", colour = "black") 
+ggplot(climate[!(climate$koeppen_code %in% c("Dfb","Dfa","Cfa","Dfc","Dsc")),],aes(x = (mod_aet / rain) - (obs_aet / rain))) + geom_histogram(bins = 30, fill = "white", colour = "black")
 
 
 climate <- climate |>
@@ -713,7 +705,7 @@ median(climate[!(climate$koeppen_code %in% c("Dfb","Dfa","Cfa")),]$ratio)
 
 clim <- max_cliamte
 
-ggplot(multi_year,aes(x = (mod_aet / rain) - (obs_aet / rain))) + geom_histogram(bins = 50, fill = "white", colour = "black") 
+ggplot(multi_year,aes(x = (mod_aet / rain) - (obs_aet / rain))) + geom_histogram(bins = 50, fill = "white", colour = "black")
 
 
 ggplot(multi_year, aes(x = pet / rain, y = mod_aet/rain, color= Dfc)) + geom_point() +
@@ -731,39 +723,39 @@ ggplot(multi_year, aes(x = pet / rain, y = obs_aet/rain, color= Dfc)) + geom_poi
 
 create_df_testing <- function(diffence_reference){
   driver_data <- readRDS("driver_data_camels.rds")
-  
-  
+
+
   driver_data <- driver_data |> unnest(site_info) |>
     mutate(reference_height = canopy_height * diffence_reference) |>
     group_by(sitename) |>
     nest(site_info = c(lat,lon,elv,whc,canopy_height,reference_height))
-  
+
   best_par <- readRDS("~/data_scratch/rsofun/global_calib_shorter.rds")
-  
+
   params_modl <- list(
-    kphio              =  best_par$par[["kphio"]],   
-    kphio_par_a        =  best_par$par[["kphio_par_a"]],       
-    kphio_par_b        =  best_par$par[["kphio_par_b"]],       
-    rd_to_vcmax        =  0.014,  
-    soilm_thetastar    =  best_par$par[["soilm_thetastar"]],       
-    beta_unitcostratio =  best_par$par[["beta_unitcostratio"]],        
+    kphio              =  best_par$par[["kphio"]],
+    kphio_par_a        =  best_par$par[["kphio_par_a"]],
+    kphio_par_b        =  best_par$par[["kphio_par_b"]],
+    rd_to_vcmax        =  0.014,
+    soilm_thetastar    =  best_par$par[["soilm_thetastar"]],
+    beta_unitcostratio =  best_par$par[["beta_unitcostratio"]],
     tau_acclim         =  30,
     kc_jmax            =  0.41,
     gw_calib           = best_par$par[["gw_calib"]]
   )
-  
-  
+
+
   filter_out <- readLines("camels_to_discard.txt")
-  
+
   driver_data <- driver_data[!(driver_data$sitename %in% filter_out),]
-  
+
   # run the model for these parameters
   output <- rsofun::runread_pmodel_f(
     driver_data,
     par = params_modl
   )
-  
-  
+
+
   mod <- left_join(output |>
                      unnest(data) |>
                      dplyr::select(sitename,date,cond,aet,pet),
@@ -772,27 +764,27 @@ create_df_testing <- function(diffence_reference){
                      dplyr::select(sitename,date,rain) |>
                      mutate(rain = rain * 86400),
                    by = c("sitename","date")
-  ) |> 
+  ) |>
     mutate(prec = rain + cond) |>
     group_by(sitename, year(date)) |>
     summarise(aet = sum(aet, na.rm = T),
               prec = sum(prec,na.rm = T),
               pet = sum(pet, na.rm = T))
-  
-  
+
+
   obs <- driver_data |>
     unnest(forcing) |>
     mutate(rain = rain * 86400) |>
     group_by(sitename, year(date)) |>
     summarise(runoff = sum(runoff, na.rm = T),
               rain = sum(rain,na.rm = T))
-  
+
   obs2 <- driver_data |>
     unnest(site_info) |>
     group_by(sitename) |>
     dplyr::select(sitename,canopy_height,reference_height,koeppen_code,lat,lon)
-  
-  
+
+
   multi_year <- left_join(
     mod, obs, by = c("sitename","year(date)")) |>
     rename(mod_aet = aet) |>
@@ -808,9 +800,9 @@ create_df_testing <- function(diffence_reference){
               runoff = mean(runoff),
               pet = mean(pet))|>
     dplyr::select(sitename, mod_aet, obs_aet,delta,error,rain,runoff,pet)
-  
+
   multi_year <- left_join(multi_year,obs2,by="sitename")
-  
+
   return(multi_year)
 }
 
@@ -825,10 +817,10 @@ delta_res <- NULL
 
 for(i in reference_set){
   multi_year <- create_df_testing(i)
-  
+
   message(i)
   delta_res <- append(delta_res,sum(abs(multi_year$error)))
-  
+
 }
 
 plot(reference_set,delta_res)
@@ -855,21 +847,21 @@ ggplot() +
 
 
 ggplot(multi_year, aes(x = canopy_height, y = delta)) +
-  geom_point() 
+  geom_point()
 
 ggplot(multi_year, aes(x = koeppen_code, y = delta)) + geom_boxplot() + geom_jitter() +
   ylab("delta (mm)")
 
 ggplot(multi_year, aes(x = canopy_height, y = delta)) +
-  geom_point() 
+  geom_point()
 
 ggplot(multi_year, aes(x = rain / runoff, y = delta, color = koeppen_code)) +
   geom_point() + scale_x_log10()
 
 # box <- multi_year
-# 
+#
 # box$breaks <- cut(multi_year$canopy_height, breaks = 15, labels = FALSE)
-# 
+#
 # ggplot(box, aes(x = breaks, y = delta, group = breaks)) +
 #   geom_boxplot()+ geom_jitter()
 
@@ -901,13 +893,13 @@ ggplot(multi_year,aes(x = delta)) + geom_histogram(bins = 50, fill = "white", co
 # for now by a ugly for cycle
 
 find_best_ref <- function(i){
-  
+
   test <- driver_data[i,]
-  
+
   ref_array <- seq( test$site_info[[1]]$canopy_height * 0.7, test$site_info[[1]]$canopy_height + 10,length.out = 50)
-  
+
   test <- rbind(test, test[rep(1, 49), ])
-  
+
   test <- test |>
     unnest(site_info) |>
     mutate(reference_height = ref_array) |>
@@ -915,14 +907,14 @@ find_best_ref <- function(i){
     group_by(sitename) |>
     nest(site_info = c(lat,lon,elv,whc,canopy_height,reference_height)) |>
     dplyr::select(sitename, params_siml,site_info,forcing)
-  
+
   output <- rsofun::runread_pmodel_f(
     test,
     par = params_modl
   )
-  
+
   message(paste0("done ", i))
-  
+
   mod <- left_join(output |>
                      unnest(data) |>
                      dplyr::select(sitename,date,cond,aet,pet),
@@ -931,27 +923,27 @@ find_best_ref <- function(i){
                      dplyr::select(sitename,date,rain) |>
                      mutate(rain = rain * 86400),
                    by = c("sitename","date")
-  ) |> 
+  ) |>
     mutate(prec = rain + cond) |>
     group_by(sitename, year(date)) |>
     summarise(aet = sum(aet, na.rm = T),
               prec = sum(prec,na.rm = T),
               pet = sum(pet, na.rm = T))
-  
-  
+
+
   obs <- test |>
     unnest(forcing) |>
     mutate(rain = rain * 86400) |>
     group_by(sitename, year(date)) |>
     summarise(runoff = sum(runoff, na.rm = T),
               rain = sum(rain,na.rm = T))
-  
+
   obs2 <- test |>
     unnest(site_info) |>
     group_by(sitename) |>
     dplyr::select(sitename,canopy_height,reference_height,lat,lon)
-  
-  
+
+
   mod_obs <- left_join(
     mod, obs, by = c("sitename","year(date)")) |>
     rename(mod_aet = aet) |>
@@ -967,26 +959,26 @@ find_best_ref <- function(i){
               runoff = mean(runoff),
               pet = mean(pet))|>
     dplyr::select(sitename, mod_aet, obs_aet,delta,error,rain,runoff,pet)
-  
+
   mod_obs <- left_join(mod_obs,obs2,by="sitename")
-  
+
   mod_obs <- mod_obs |> filter(error == min(error)) |>
     mutate(sitename = substr(sitename,1,15))
-  
+
   return(mod_obs)
-  
+
   }
 
 
 arr_of_best <- NULL
 
 for(i in 1:594){
-  
-  
+
+
   single_site <- find_best_ref(i)
-  
+
   arr_of_best <- rbind(arr_of_best,single_site)
-  
+
 }
 
 arr_of_best2 <- arr_of_best
@@ -1001,9 +993,9 @@ arr_of_best$delta_ref <- arr_of_best$reference_height - arr_of_best$canopy_heigh
 
 converged <- arr_of_best |>
   filter(delta_ref < 9.5) |>
-  filter(koeppen_code != "Dfc") |> 
-  filter(koeppen_code != "Dsc") |> 
-  filter(koeppen_code != "Dsb") 
+  filter(koeppen_code != "Dfc") |>
+  filter(koeppen_code != "Dsc") |>
+  filter(koeppen_code != "Dsb")
 
 
 ggplot() +
@@ -1067,8 +1059,8 @@ multi_year$climate <- ifelse(multi_year$koeppen_code == "Dsb"
                          ,"Dsb",multi_year$climate)
 
 
-ggplot(multi_year, aes(x = rain / runoff, y = delta, color=climate)) + 
-  geom_point() + scale_x_log10(guide = "axis_logticks") 
+ggplot(multi_year, aes(x = rain / runoff, y = delta, color=climate)) +
+  geom_point() + scale_x_log10(guide = "axis_logticks")
 
 
 ggplot(multi_year, aes(x = pet / rain, y = mod_aet/rain)) + geom_point() +
@@ -1082,23 +1074,23 @@ low_ratio <- multi_year |>
 
 ggplot(low_ratio , aes(x = koeppen_code, y =delta)) + geom_boxplot()
 
-ggplot(multi_year, aes(x = rain / runoff, y = delta)) + 
-  geom_point() + scale_x_log10(guide = "axis_logticks") 
+ggplot(multi_year, aes(x = rain / runoff, y = delta)) +
+  geom_point() + scale_x_log10(guide = "axis_logticks")
 
 multi_year <- left_join(multi_year,
                         driver_data |> unnest(site_info) |> dplyr::select(sitename,whc),
                         by = "sitename")
 
-ggplot(multi_year, aes(x = ratio, y = whc,color=climate)) + geom_point() + scale_x_log10(guide = "axis_logticks") 
+ggplot(multi_year, aes(x = ratio, y = whc,color=climate)) + geom_point() + scale_x_log10(guide = "axis_logticks")
 
 
 multi_year$mod_ratio <- multi_year$rain /(multi_year$rain - multi_year$mod_aet)
 
-ggplot(multi_year, aes(x = ratio, y = mod_ratio, colour = climate)) + geom_point() + 
-  scale_x_log10(guide = "axis_logticks") + 
+ggplot(multi_year, aes(x = ratio, y = mod_ratio, colour = climate)) + geom_point() +
+  scale_x_log10(guide = "axis_logticks") +
   scale_y_log10(guide = "axis_logticks") +
   geom_abline(slope = 1, intercept = 0, color = "red")
 
 
-ggplot(multi_year, aes(x = koeppen_code, y = log(mod_ratio /ratio))) + geom_boxplot() 
+ggplot(multi_year, aes(x = koeppen_code, y = log(mod_ratio /ratio))) + geom_boxplot()
 
