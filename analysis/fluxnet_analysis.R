@@ -13,13 +13,13 @@ library(ncdf4)
 library(cowplot)
 
 # Load functions
-source("~/data_scratch/SoFunCalVal_definitivo/R/main_plus_metrics.R") 
-source("~/data_scratch/SoFunCalVal_definitivo/R//get_stats.R")
-source("~/data_scratch/SoFunCalVal_definitivo/R//analyse_modobs2.R")
-source("~/data_scratch/SoFunCalVal_definitivo/R/align_events.R")
-source("~/data_scratch/SoFunCalVal_definitivo/R/eval_droughtresponse.R")
-source("~/data_scratch/SoFunCalVal_definitivo/R/heatscatter_dependencies.R")
-source("~/data_scratch/SoFunCalVal_definitivo/R/create_obs_eval.R")
+source("/R/main_plus_metrics.R")
+source("/R//get_stats.R")
+source("/R/analyse_modobs2.R")
+source("/R/align_events.R")
+source("/R/eval_droughtresponse.R")
+source("/R/heatscatter_dependencies.R")
+source("/R/create_obs_eval.R")
 
 
 scaling_factor <- 1.5
@@ -56,35 +56,35 @@ fdk_site_info <- fdk_site_info[which(fdk_site_info$sitename %in% driver$sitename
 fdk_filter <- fdk_filter[which(fdk_filter$sitename %in% driver$sitename &
                                  fdk_filter$sitename %in% fdk_site_info$sitename),]
 
-driver_forcing <- driver |> 
-  dplyr::select(sitename, forcing) |> 
+driver_forcing <- driver |>
+  dplyr::select(sitename, forcing) |>
   unnest(cols = c(forcing))
 
 driver <- driver_forcing |>
   left_join(
-    fdk_filter |> 
+    fdk_filter |>
       dplyr::select(
-        sitename, 
-        year_start = year_start_gpp, 
+        sitename,
+        year_start = year_start_gpp,
         year_end = year_end_gpp),
     by = join_by(sitename)
-  ) |> 
-  mutate(year = year(date)) |> 
-  filter(year >= year_start & year <= year_end) |> 
-  dplyr::select(-year_start, -year_end, -year) |> 
-  group_by(sitename) |> 
-  nest() |> 
+  ) |>
+  mutate(year = year(date)) |>
+  filter(year >= year_start & year <= year_end) |>
+  dplyr::select(-year_start, -year_end, -year) |>
+  group_by(sitename) |>
+  nest() |>
   left_join(
-    driver |> 
+    driver |>
       dplyr::select(
-        sitename, 
+        sitename,
         site_info,
         params_siml
       ),
     by = join_by(sitename)
-  ) |> 
-  rename(forcing = data) |> 
-  dplyr::select(sitename, params_siml, site_info, forcing) |> 
+  ) |>
+  rename(forcing = data) |>
+  dplyr::select(sitename, params_siml, site_info, forcing) |>
   ungroup()
 
 
@@ -99,50 +99,41 @@ fdk_site_info <- fdk_site_info[which(fdk_site_info$sitename %in% driver$sitename
 fdk_filter <- fdk_filter[which(fdk_filter$sitename %in% driver$sitename &
                                  fdk_filter$sitename %in% fdk_site_info$sitename),]
 
-driver_forcing <- driver |> 
-  dplyr::select(sitename, forcing) |> 
+driver_forcing <- driver |>
+  dplyr::select(sitename, forcing) |>
   unnest(cols = c(forcing))
 
 driver <- driver_forcing |>
   left_join(
-    fdk_filter |> 
+    fdk_filter |>
       dplyr::select(
-        sitename, 
-        year_start = year_start_le, 
+        sitename,
+        year_start = year_start_le,
         year_end = year_end_le),
     by = join_by(sitename)
-  ) |> 
-  mutate(year = year(date)) |> 
-  filter(year >= year_start & year <= year_end) |> 
-  dplyr::select(-year_start, -year_end, -year) |> 
-  group_by(sitename) |> 
-  nest() |> 
+  ) |>
+  mutate(year = year(date)) |>
+  filter(year >= year_start & year <= year_end) |>
+  dplyr::select(-year_start, -year_end, -year) |>
+  group_by(sitename) |>
+  nest() |>
   left_join(
-    driver |> 
+    driver |>
       dplyr::select(
-        sitename, 
+        sitename,
         site_info,
         params_siml
       ),
     by = join_by(sitename)
-  ) |> 
-  rename(forcing = data) |> 
-  dplyr::select(sitename, params_siml, site_info, forcing) |> 
+  ) |>
+  rename(forcing = data) |>
+  dplyr::select(sitename, params_siml, site_info, forcing) |>
   ungroup()
 
 
-# good_sites <- readLines("../my_stuff/good_sites.txt")
-# 
-# 
-# driver <- driver[driver$sitename %in% good_sites,]
-# 
-# fdk_site_info <- fdk_site_info[which(fdk_site_info$sitename %in% driver$sitename),]
 
 
-
-
-
-# sitedplyr::selection: good-quality sites from analysis of Stocker et al. (2018) New Phyt.
+# good-quality sites from analysis of Stocker et al. (2018) New Phyt.
 df_flue <- readr::read_csv("~/data_scratch/SoFunCalVal_definitivo/data/flue_stocker18nphyt.csv")
 
 df_flue <- df_flue[df_flue$site %in% fdk_filter$sitename,]
@@ -157,6 +148,8 @@ df_flue <- left_join(df_flue |>
   )) |>
   dplyr::select(-c(year_start_gpp,year_end_gpp)) |>
   rename(site = sitename)
+
+# transformation from le to ET
 
 le_to_et <- function(df){
   1000 * 60 * 60 * 24 * df$le / (cwd::calc_enthalpy_vap(df$temp) * cwd::calc_density_h2o(df$temp, df$patm))
@@ -183,80 +176,84 @@ driver <- driver[driver$sitename %in% filter$sitename,]
 fdk_site_info <- fdk_site_info[fdk_site_info$sitename %in% driver$sitename,]
 
 
-driver <- driver |> 
+driver <- driver |>
   unnest(forcing) |>
   mutate(aet = 1000 * 60 * 60 * 24 * le / (cwd::calc_enthalpy_vap(temp) * cwd::calc_density_h2o(temp, patm))) |>
   nest(forcing = c("date","temp", "vpd", "ppfd", "netrad", "patm", "snow", "rain", "tmin", "tmax", "vwind", "fapar", "co2", "ccov",
                    "gpp", "gpp_qc", "nee", "nee_qc", "le", "le_qc", "aet"))
 
+
 # construct list of observations used for evaluation
 obs_eval <- create_obs_eval(driver ,fdk_site_info, target = c("gpp","aet"))
 
+# this function will perform all  required analysis in SoFunCalVal package
+
+
 so_fun_analysis <- function(out_dir, prefix){
-  
-  dailiy_gpp <- out_eval$gpp$fluxnet$plot$gg_modobs_xdaily + ggtitle(NULL) 
+
+  dailiy_gpp <- out_eval$gpp$fluxnet$plot$gg_modobs_xdaily + ggtitle(NULL)
   ggsave(plot = dailiy_gpp, paste0(out_dir,prefix,"daily_gpp.png"),dpi = 300)
-  
+
   ## Mean seasonal cycle
-  
-  
+
+
   climates <-  out_eval$gpp$fluxnet$data$meandoydf_byclim_stats  %>%
-    dplyr::filter(climatezone != "- north") 
-  
-  metrics_rsq <- climates |> 
+    dplyr::filter(climatezone != "- north")
+
+  metrics_rsq <- climates |>
     group_by(climatezone) |>
-    summarise(rsq = mean(rsq), 
+    summarise(rsq = mean(rsq),
               rmse = mean(RMSE),# are repeated elements
               x_pos = 365,
-              y_pos = 17) 
+              y_pos = 17)
   # |>
   #   mutate(rsq = purrr::map(rsq, ~ bquote(italic(R)^2 == .(round(.x, 2)))))
-  
+
   metrics_rsq <- metrics_rsq %>%
     mutate(label = paste0("italic(R)^2 == ", round(rsq, 2)))
-  
-  
-  metrics_rmse <- climates |> 
+
+
+  metrics_rmse <- climates |>
     group_by(climatezone) |>
-    summarise( 
+    summarise(
       rmse = mean(RMSE),# are repeated elements
       x_pos = 365,
       y_pos = 14) |>
     mutate(rmse = paste0("rmse = ", substr(rmse,1,4)))
-  
-  
-  cliamtes_gpp_all <- out_eval$gpp$fluxnet$data$meandoydf_byclim %>% 
+
+
+  cliamtes_gpp_all <- out_eval$gpp$fluxnet$data$meandoydf_byclim %>%
     dplyr::filter(climatezone %in%  unique(out_eval$gpp$fluxnet$data$meandoydf_byclim$climatezone)
-                  
+
                   # "AM south", "Bsk north", "Cfa north",
                   # "Cfb north", "Cfb south", "ET north",
                   # "Csb north", "Dfb north", "Dfc north"
-                  
+
     ) %>%
-    dplyr::filter(climatezone != "- north") %>% 
+    dplyr::filter(climatezone != "- north") %>%
     pivot_longer(
       c(obs_mean, mod_mean),
       names_to = "source",
       values_to = "gpp"
-    ) %>% 
+    ) %>%
     ggplot() +
     geom_ribbon(
-      aes(x = doy, ymin = obs_min, ymax = obs_max), 
-      fill = "black", 
+      aes(x = doy, ymin = obs_min, ymax = obs_max),
+      fill = "black",
       alpha = 0.2
     ) +
     geom_line(aes(x = doy, y = gpp, color = source), size = 0.4) +
-    labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ), 
+    labs(y = expression( paste("Simulated GPP (g C m"^-2, " d"^-1, ")" ) ),
          x = "DOY") +
     facet_wrap( ~climatezone, ncol = 4 ) +
     geom_text(
       data = metrics_rsq |> dplyr::filter(climatezone %in% unique(out_eval$gpp$fluxnet$data$meandoydf_byclim$climatezone)),
-      aes(x = x_pos, y = y_pos, label = label), 
+      aes(x = x_pos, y = y_pos, label = label),
       parse = TRUE,
       size = 4.5,
       hjust = 1
     ) +
-    geom_text(data = metrics_rmse |> dplyr::filter(climatezone %in%  unique(out_eval$gpp$fluxnet$data$meandoydf_byclim$climatezone)), 
+    geom_text(data = metrics_rmse |> dplyr::filter(climatezone %in%  unique(out_eval$gpp$fluxnet$data$meandoydf_byclim$climatezone)),
               aes(x = x_pos, y = y_pos, label = rmse), size = 4, hjust = 1) +
     theme_gray() +
     theme(legend.position = "bottom",
@@ -265,27 +262,27 @@ so_fun_analysis <- function(out_dir, prefix){
       name = "Setup: ",
       values = c("red", "black")
     )
-  
+
   ggsave(plot = cliamtes_gpp_all, paste0(out_dir,prefix,"climates_gpp_all.png"),dpi = 300)
-  
-  
+
+
   ## Drought response
-  
-  
-  df_dday_agg <- eval_droughtresponse( 
+
+
+  df_dday_agg <- eval_droughtresponse(
     df = out_eval$gpp$fluxnet$data$ddf %>%
       rename(
         site = sitename
-      ), 
+      ),
     df_flue = readr::read_csv("~/data_scratch/SoFunCalVal_definitivo/data/flue_stocker18nphyt.csv"),
     before = 20,
     after = 105,
-    leng_threshold = 10, 
-    nbins = 10, 
+    leng_threshold = 10,
+    nbins = 10,
     do_norm = TRUE
   )
-  
-  drought_gpp <- df_dday_agg %>% 
+
+  drought_gpp <- df_dday_agg %>%
     ggplot() +
     geom_hline(
       yintercept = 0,
@@ -308,7 +305,7 @@ so_fun_analysis <- function(out_dir, prefix){
         x = dday,
         ymin = q33,
         ymax = q66
-      ), 
+      ),
       alpha = 0.3) +
     scale_color_manual(
       values = c(
@@ -323,7 +320,7 @@ so_fun_analysis <- function(out_dir, prefix){
         "FULL" = "royalblue"
       ),
       name = "Setup") +
-    ylim(-1.2, 2.2) + 
+    ylim(-1.2, 2.2) +
     xlim(-20, 105) +
     scale_x_continuous(
       expand = c(0,0)
@@ -333,85 +330,85 @@ so_fun_analysis <- function(out_dir, prefix){
     ) +
     labs(
       x = "Days after drought onset",
-      y = expression( paste( "Bias (g C m"^{-1}, " d"^{-1}, ")")) 
+      y = expression( paste( "Bias (g C m"^{-1}, " d"^{-1}, ")"))
     ) +
     theme_classic() +
     theme(
       panel.grid.major.y = element_line(),
       panel.grid.major.x = element_line()
     )
-  
+
   ggsave(plot = drought_gpp, paste0(out_dir,prefix,"drought_gpp.png"),dpi = 300)
-  
-  
+
+
   ## 8-daily, spatial and annual
-  
-  
-  daily_aet <- out_eval$aet$fluxnet$plot$gg_modobs_monthly + ggtitle(NULL) 
-  
+
+
+  daily_aet <- out_eval$aet$fluxnet$plot$gg_modobs_monthly + ggtitle(NULL)
+
   ggsave(plot = daily_aet, paste0(out_dir,prefix,"daily_aet.png"),dpi = 300)
-  
-  
+
+
   ## Mean seasonal cycle
-  
+
   climates <-  out_eval$aet$fluxnet$data$meandoydf_byclim_stats %>%
     dplyr::filter(climatezone != "- north")
-  
-  metrics_rsq <- climates |> 
+
+  metrics_rsq <- climates |>
     group_by(climatezone) |>
-    summarise(rsq = mean(rsq), 
+    summarise(rsq = mean(rsq),
               rmse = mean(RMSE),# are repeated elements
               x_pos = 365,
               y_pos = 7.6)
   # |>
   #   mutate(rsq = purrr::map(rsq, ~ bquote(italic(R)^2 == .(round(.x, 2)))))
-  
+
   metrics_rsq <- metrics_rsq %>%
     mutate(label = paste0("italic(R)^2 == ", round(rsq, 2)))
-  
-  
-  metrics_rmse <- climates |> 
+
+
+  metrics_rmse <- climates |>
     group_by(climatezone) |>
-    summarise( 
+    summarise(
       rmse = mean(RMSE),# are repeated elements
       x_pos = 365,
       y_pos = 6.3) |>
     mutate(rmse = paste0("rmse = ", substr(rmse,1,4)))
-  
-  
-  climates_aet_all <- out_eval$aet$fluxnet$data$meandoydf_byclim %>% 
+
+
+  climates_aet_all <- out_eval$aet$fluxnet$data$meandoydf_byclim %>%
     dplyr::filter(climatezone %in%  unique(out_eval$aet$fluxnet$data$meandoydf_byclim$climatezone)
-                  
+
                   # "Aw south", "Bsk north", "Cfa north",
                   # "Cfb north", "Cfb south", "ET north",
                   # "Csb north", "Dfb north", "Dfc north"
-                  
+
     ) %>%
-    dplyr::filter(koeppen_code != "-") %>% 
+    dplyr::filter(koeppen_code != "-") %>%
     pivot_longer(
       c(obs_mean, mod_mean),
       names_to = "source",
       values_to = "aet"
-    )%>% 
+    )%>%
     ggplot() +
     geom_ribbon(
-      aes(x = doy, ymin = obs_min, ymax = obs_max), 
-      fill = "black", 
+      aes(x = doy, ymin = obs_min, ymax = obs_max),
+      fill = "black",
       alpha = 0.2
     ) +
     geom_line(aes(x = doy, y = aet, color = source), size = 0.4) +
-    labs(y =  expression( paste("Simulated AET (mm d"^{-1}, ")" ) ), 
+    labs(y =  expression( paste("Simulated AET (mm d"^{-1}, ")" ) ),
          x = "DOY") +
     ylim(0,8.5) +
     facet_wrap( ~climatezone, ncol = 4 ) +
     geom_text(
       data = metrics_rsq |> dplyr::filter(climatezone %in% unique(out_eval$gpp$fluxnet$data$meandoydf_byclim$climatezone)),
-      aes(x = x_pos, y = y_pos, label = label), 
+      aes(x = x_pos, y = y_pos, label = label),
       parse = TRUE,
       size = 4.5,
       hjust = 1
     ) +
-    geom_text(data = metrics_rmse |> dplyr::filter(climatezone %in%  unique(out_eval$aet$fluxnet$data$meandoydf_byclim$climatezone)), 
+    geom_text(data = metrics_rmse |> dplyr::filter(climatezone %in%  unique(out_eval$aet$fluxnet$data$meandoydf_byclim$climatezone)),
               aes(x = x_pos, y = y_pos, label = rmse), size = 4.5, hjust = 1) +
     theme_gray() +
     theme(legend.position = "none",
@@ -420,50 +417,50 @@ so_fun_analysis <- function(out_dir, prefix){
       name = "Setup: ",
       values = c("red", "black")
     )
-  
+
   ggsave(plot = climates_aet_all, paste0(out_dir,prefix,"climates_aet_all.png"), dpi = 300, width = 7, height = 10)
-  
-  
-  climates_aet <- out_eval$aet$fluxnet$data$meandoydf_byclim %>% 
-    dplyr::filter(climatezone %in%  
+
+
+  climates_aet <- out_eval$aet$fluxnet$data$meandoydf_byclim %>%
+    dplyr::filter(climatezone %in%
                   c("Csb north", "Csa north", "ET north",
-                  "Dfb north", "Dsa north", "Af north", 
+                  "Dfb north", "Dsa north", "Af north",
                   "Aw south", "Cfb north", "Bsh south")
-                  
+
     ) %>%
-    dplyr::filter(koeppen_code != "-") %>% 
+    dplyr::filter(koeppen_code != "-") %>%
     pivot_longer(
       c(obs_mean, mod_mean),
       names_to = "source",
       values_to = "aet"
-    )%>% 
+    )%>%
     ggplot() +
     geom_ribbon(
-      aes(x = doy, ymin = obs_min, ymax = obs_max), 
-      fill = "black", 
+      aes(x = doy, ymin = obs_min, ymax = obs_max),
+      fill = "black",
       alpha = 0.2
     ) +
     geom_line(aes(x = doy, y = aet, color = source), size = 0.4) +
-    labs(y =  expression( paste("Simulated AET (mm d"^{-1}, ")" ) ), 
+    labs(y =  expression( paste("Simulated AET (mm d"^{-1}, ")" ) ),
          x = "DOY") +
     ylim(0,8.5) +
     facet_wrap( ~climatezone ) +
     geom_text(
       data = metrics_rsq |> dplyr::filter(
         climatezone %in% c("Csb north", "Csa north", "ET north",
-                           "Dfb north", "Dsa north", "Af north", 
+                           "Dfb north", "Dsa north", "Af north",
                            "Aw south", "Cfb north", "Bsh south")
       ),
-      aes(x = x_pos, y = y_pos, label = label), 
+      aes(x = x_pos, y = y_pos, label = label),
       parse = TRUE,
       size = 4.5,
       hjust = 1
     ) +
-    geom_text(data = metrics_rmse |> dplyr::filter(climatezone %in% 
+    geom_text(data = metrics_rmse |> dplyr::filter(climatezone %in%
                                                      c("Csb north", "Csa north", "ET north",
-                                                       "Dfb north", "Dsa north", "Af north", 
+                                                       "Dfb north", "Dsa north", "Af north",
                                                        "Aw south", "Cfb north", "Bsh south")
-                                                   ), 
+                                                   ),
               aes(x = x_pos, y = y_pos, label = rmse), size = 4.5, hjust = 1) +
     theme_gray() +
     theme(legend.position = "bottom",
@@ -472,28 +469,28 @@ so_fun_analysis <- function(out_dir, prefix){
       name = "Setup: ",
       values = c("red", "black")
     )
-  
+
   ggsave(plot = climates_aet, paste0(out_dir,prefix,"climates_aet.png"),dpi = 300)
-  
-  
-  
+
+
+
   ## Drought response
-  
-  
-  df_dday_agg <- eval_droughtresponse( 
+
+
+  df_dday_agg <- eval_droughtresponse(
     df = out_eval$aet$fluxnet$data$ddf %>%
       rename(
         site = sitename
-      ), 
+      ),
     df_flue = readr::read_csv("~/data_scratch/SoFunCalVal_definitivo/data/flue_stocker18nphyt.csv"),
     before = 20,
     after = 105,
-    leng_threshold = 10, 
-    nbins = 10, 
+    leng_threshold = 10,
+    nbins = 10,
     do_norm = TRUE
   )
-  
-  drought_aet <- df_dday_agg %>% 
+
+  drought_aet <- df_dday_agg %>%
     ggplot() +
     geom_hline(
       yintercept = 0,
@@ -516,7 +513,7 @@ so_fun_analysis <- function(out_dir, prefix){
         x = dday,
         ymin = q33,
         ymax = q66
-      ), 
+      ),
       alpha = 0.3) +
     scale_color_manual(
       values = c(
@@ -531,7 +528,7 @@ so_fun_analysis <- function(out_dir, prefix){
         "FULL" = "royalblue"
       ),
       name = "Setup") +
-    ylim(-1.2, 2.2) + 
+    ylim(-1.2, 2.2) +
     xlim(-20, 105) +
     scale_x_continuous(
       expand = c(0,0)
@@ -541,21 +538,21 @@ so_fun_analysis <- function(out_dir, prefix){
     ) +
     labs(
       x = "Days after drought onset",
-      y = expression( paste( "Bias AET (mm d"^{-1}, ")")) 
+      y = expression( paste( "Bias AET (mm d"^{-1}, ")"))
     ) +
     theme_classic() +
     theme(
       panel.grid.major.y = element_line(),
       panel.grid.major.x = element_line()
     )
-  
+
   ggsave(plot = drought_aet, paste0(out_dir,prefix,"drought_aet.png"),dpi = 300)
-  
+
   all_plot <- list(dailiy_gpp,cliamtes_gpp_all,drought_gpp,
                    daily_aet, climates_aet_all, climates_aet, drought_aet)
-  
+
   return(all_plot)
-  
+
 }
 
 
@@ -566,15 +563,15 @@ so_fun_analysis <- function(out_dir, prefix){
 
 # Model run
 
-par_calib <-  read_rds("~/data_scratch/my_stuff/global_calib_shorter.rds")
+par_calib <-  read_rds("/data/global_calib_PMS0.rds")
 
 
 params_modl <- list(
-  kphio              =  par_calib$par[["kphio"]], 
-  kphio_par_a        =  par_calib$par[["kphio_par_a"]],       
+  kphio              =  par_calib$par[["kphio"]],
+  kphio_par_a        =  par_calib$par[["kphio_par_a"]],
   kphio_par_b        =  par_calib$par[["kphio_par_b"]],
-  rd_to_vcmax        =  0.014,  
-  soilm_thetastar    =  par_calib$par[["soilm_thetastar"]], 
+  rd_to_vcmax        =  0.014,
+  soilm_thetastar    =  par_calib$par[["soilm_thetastar"]],
   beta_unitcostratio =  par_calib$par[["beta_unitcostratio"]],
   tau_acclim         =  30,
   kc_jmax            =  0.41,
@@ -610,25 +607,25 @@ settings_eval <- list(
   agg       = 8
   )
 
-out_eval <- eval_sofun( 
-  output, 
-  settings_eval, 
-  obs_eval = obs_eval, 
-  overwrite = TRUE, 
-  light = FALSE 
+out_eval <- eval_sofun(
+  output,
+  settings_eval,
+  obs_eval = obs_eval,
+  overwrite = TRUE,
+  light = FALSE
   )
 
-PM_S0 <- so_fun_analysis("../my_stuff/figure_paper/",prefix = "PM_S0_")
+PM_S0 <- so_fun_analysis("/figure/",prefix = "PM_S0_")
 
 clim_aet <-  PM_S0[[5]]
 
-ggsave(plot = clim_aet, paste0("../my_stuff/figure_paper/","PM_S0_climates_aet_all.pdf"), device = "pdf", dpi = 300, width = 7, height = 10)
+ggsave(plot = clim_aet, paste0("/figure/","PM_S0_climates_aet_all.pdf"), device = "pdf", dpi = 300, width = 7, height = 10)
 
 ##-------
 # PM old WHC
 ##------
 
-nc_file <- nc_open("~/data_scratch/my_stuff/whc_2m.nc")
+nc_file <- nc_open("/data/whc_2m.nc")
 
 whc = ncvar_get(nc_file, "whc_2m")
 lons = ncvar_get(nc_file, "lon")
@@ -655,15 +652,15 @@ for(i in 1:dim(driver)[1]){
 
 
 
-par_calib <-  read_rds("~/data_scratch/my_stuff/global_calib_PM_old_WHC.rds")
+par_calib <-  read_rds("/data/global_calib_PM_old_WHC.rds")
 
 
 params_modl <- list(
-  kphio              =  par_calib$par[["kphio"]], 
-  kphio_par_a        =  par_calib$par[["kphio_par_a"]],       
+  kphio              =  par_calib$par[["kphio"]],
+  kphio_par_a        =  par_calib$par[["kphio_par_a"]],
   kphio_par_b        =  par_calib$par[["kphio_par_b"]],
-  rd_to_vcmax        =  0.014,  
-  soilm_thetastar    =  par_calib$par[["soilm_thetastar"]], 
+  rd_to_vcmax        =  0.014,
+  soilm_thetastar    =  par_calib$par[["soilm_thetastar"]],
   beta_unitcostratio =  par_calib$par[["beta_unitcostratio"]],
   tau_acclim         =  30,
   kc_jmax            =  0.41,
@@ -699,19 +696,19 @@ settings_eval <- list(
   agg       = 8
 )
 
-out_eval <- eval_sofun( 
-  output, 
-  settings_eval, 
-  obs_eval = obs_eval, 
-  overwrite = TRUE, 
-  light = FALSE 
+out_eval <- eval_sofun(
+  output,
+  settings_eval,
+  obs_eval = obs_eval,
+  overwrite = TRUE,
+  light = FALSE
 )
 
-PM <- so_fun_analysis("../my_stuff/figure_paper/",prefix = "PM_")
+PM <- so_fun_analysis("/figure/",prefix = "PM_")
 
 clim_aet <-  PM[[5]]
 
-ggsave(plot = clim_aet, paste0("../my_stuff/figure_paper/","PM_climates_aet_all.pdf"), device = "pdf", dpi = 300, width = 7, height = 10)
+ggsave(plot = clim_aet, paste0("/figure/","PM_climates_aet_all.pdf"), device = "pdf", dpi = 300, width = 7, height = 10)
 
 
 ##-------
@@ -722,11 +719,11 @@ par_calib <-  read_rds("~/data_scratch/my_stuff/global_calib_PT.rds")
 
 
 params_modl <- list(
-  kphio              =  par_calib$par[["kphio"]], 
-  kphio_par_a        =  par_calib$par[["kphio_par_a"]],       
+  kphio              =  par_calib$par[["kphio"]],
+  kphio_par_a        =  par_calib$par[["kphio_par_a"]],
   kphio_par_b        =  par_calib$par[["kphio_par_b"]],
-  rd_to_vcmax        =  0.014,  
-  soilm_thetastar    =  par_calib$par[["soilm_thetastar"]], 
+  rd_to_vcmax        =  0.014,
+  soilm_thetastar    =  par_calib$par[["soilm_thetastar"]],
   beta_unitcostratio =  par_calib$par[["beta_unitcostratio"]],
   tau_acclim         =  30,
   kc_jmax            =  0.41,
@@ -762,37 +759,37 @@ settings_eval <- list(
   agg       = 8
 )
 
-out_eval <- eval_sofun( 
-  output, 
-  settings_eval, 
-  obs_eval = obs_eval, 
-  overwrite = TRUE, 
-  light = FALSE 
+out_eval <- eval_sofun(
+  output,
+  settings_eval,
+  obs_eval = obs_eval,
+  overwrite = TRUE,
+  light = FALSE
 )
 
-PT <- so_fun_analysis("../my_stuff/figure_paper/",prefix = "PT_")
+PT <- so_fun_analysis("/figure/",prefix = "PT_")
 
 clim_aet <-  PT[[5]]
 
-ggsave(plot = clim_aet, paste0("../my_stuff/figure_paper/","PT_climates_aet_all.pdf"), device = "pdf", dpi = 300, width = 7, height = 10)
+ggsave(plot = clim_aet, paste0("/figure/","PT_climates_aet_all.pdf"), device = "pdf", dpi = 300, width = 7, height = 10)
 
 ####--------
 
 daily_gpp <- plot_grid(PT[[1]],PM[[1]],PM_S0[[1]],ncol = 3, labels = letters[1:3])
 
-ggsave(plot = daily_gpp, paste0("../my_stuff/figure_paper/","daily_gpp_merged.pdf"),device = "pdf", dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor) # reduce size
-ggsave(plot = daily_gpp, paste0("../my_stuff/figure_paper/","daily_gpp_merged.png"), dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor) # reduce size
+ggsave(plot = daily_gpp, paste0("/figure/","daily_gpp_merged.pdf"),device = "pdf", dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor) # reduce size
+ggsave(plot = daily_gpp, paste0("/figure/","daily_gpp_merged.png"), dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor) # reduce size
 
 
 drought_gpp <- plot_grid(PT[[3]] + ylim(-1.5,1.5),PM[[3]]+ ylim(-1.5,1.5),PM_S0[[3]]+ ylim(-1.5,1.5),ncol = 3, labels = letters[1:3])
 
-ggsave(plot = drought_gpp, paste0("../my_stuff/figure_paper/","drought_gpp_merged.pdf"),device = "pdf", dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor)
+ggsave(plot = drought_gpp, paste0("/figure/","drought_gpp_merged.pdf"),device = "pdf", dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor)
 
 
 daily_aet <- plot_grid(PT[[4]],PM[[4]],PM_S0[[4]],ncol = 3, labels = letters[1:3])
 
-ggsave(plot = daily_aet, paste0("../my_stuff/figure_paper/","daily_aet_merged.pdf"),device = "pdf", dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor)  # reduce size
-ggsave(plot = daily_aet, paste0("../my_stuff/figure_paper/","daily_aet_merged.png"), dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor)  # reduce size
+ggsave(plot = daily_aet, paste0("/figure/","daily_aet_merged.pdf"),device = "pdf", dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor)  # reduce size
+ggsave(plot = daily_aet, paste0("/figure/","daily_aet_merged.png"), dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor)  # reduce size
 
 
 legend <- get_legend(PT[[6]])
@@ -801,11 +798,11 @@ legend <- get_legend(PT[[6]])
 climates_aet <- plot_grid(PT[[6]] + xlab(NULL) + theme(legend.position = "none"),PM[[6]] + xlab(NULL)+ theme(legend.position = "none"),
                           PM_S0[[6]]+  theme(legend.position = "none",legend),ncol = 1, labels = letters[1:3])
 
-ggsave(plot = climates_aet, paste0("../my_stuff/figure_paper/","climates_aet_merged.pdf"),device = "pdf", dpi = 300, width = 7 / scaling_factor, height = 21 / scaling_factor)
+ggsave(plot = climates_aet, paste0("/figure/","climates_aet_merged.pdf"),device = "pdf", dpi = 300, width = 7 / scaling_factor, height = 21 / scaling_factor)
 
 
 drought_aet <- plot_grid(PT[[7]]+ ylim(-1.5,0.8) ,PM[[7]] + ylim(-1.5,0.8), PM_S0[[7]]+ ylim(-1.5,0.8) ,ncol = 3, labels = letters[1:3])
 
-ggsave(plot = drought_aet, paste0("../my_stuff/figure_paper/","drought_aet_merged.pdf"),device = "pdf", dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor)
+ggsave(plot = drought_aet, paste0("/figure/","drought_aet_merged.pdf"),device = "pdf", dpi = 300, width = 21 / scaling_factor, height = 7 / scaling_factor)
 
 
